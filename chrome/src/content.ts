@@ -114,6 +114,7 @@ function boot() {
 html.aw-on, html.aw-on body { background: transparent !important; }
 html.aw-on [data-aw-clear] { background-color: transparent !important; }
 html.aw-on [data-aw-clearimg] { background-image: none !important; }
+html.aw-on [data-aw-noshadow] { box-shadow: none !important; }
 html.aw-on [data-aw-frost] { background-color: color-mix(in srgb, var(--cds-surface-1, #191919) 45%, transparent) !important; backdrop-filter: blur(14px) saturate(1.15); }
 html.aw-on aside.dframe-sidebar { background-color: color-mix(in srgb, var(--cds-surface-2, #1f1f1f) 72%, transparent) !important; backdrop-filter: blur(18px) saturate(1.2); }
 html.aw-on .bg-surface-3 { background-color: color-mix(in srgb, var(--cds-surface-3, #2a2a2a) 86%, transparent) !important; backdrop-filter: blur(12px); }
@@ -144,16 +145,19 @@ html.aw-on .bg-surface-3 { background-color: color-mix(in srgb, var(--cds-surfac
   }
   const near = (c: number[]) => Math.abs(c[0]! - base[0]!) + Math.abs(c[1]! - base[1]!) + Math.abs(c[2]! - base[2]!) <= 6
   function check(el: Element) {
-    if (el.id === 'aw-layer' || el.id === 'aw-picker-host') return
-    if (el.hasAttribute('data-aw-clear') || el.hasAttribute('data-aw-frost')) return
-    if (el.matches('aside.dframe-sidebar')) return
+    if (el.id === 'aw-layer' || el.id === 'aw-picker-host' || el.matches('aside.dframe-sidebar') || el.closest(SKIP)) return
     const cs = getComputedStyle(el)
-    const bg = parseColor(cs.backgroundColor)
-    if (bg && bg[3]! > 0.3 && near(bg) && !el.closest(SKIP)) el.setAttribute(bg[3]! < 0.99 ? 'data-aw-frost' : 'data-aw-clear', '')
-    const bi = cs.backgroundImage
-    if (bi && bi !== 'none' && bi.includes('gradient') && bi.includes(`${Math.round(base[0]!)}, ${Math.round(base[1]!)}, ${Math.round(base[2]!)}`) && !el.closest(SKIP)) {
-      el.setAttribute('data-aw-clearimg', '')
+    const rgb = `${Math.round(base[0]!)}, ${Math.round(base[1]!)}, ${Math.round(base[2]!)}`
+    if (!el.hasAttribute('data-aw-clear') && !el.hasAttribute('data-aw-frost')) {
+      const bg = parseColor(cs.backgroundColor)
+      if (bg && bg[3]! > 0.3 && near(bg)) el.setAttribute(bg[3]! < 0.99 ? 'data-aw-frost' : 'data-aw-clear', '')
     }
+    const bi = cs.backgroundImage
+    if (bi && bi !== 'none' && bi.includes('gradient') && bi.includes(rgb)) el.setAttribute('data-aw-clearimg', '')
+    // claude.ai masks text scrolling under the message box with a page-coloured
+    // spread shadow; over a wallpaper that reads as a black band.
+    const sh = cs.boxShadow
+    if (sh && sh !== 'none' && sh.includes(`rgb(${rgb})`)) el.setAttribute('data-aw-noshadow', '')
   }
   const fullSweep = () => {
     if (!document.body) return
@@ -161,10 +165,11 @@ html.aw-on .bg-surface-3 { background-color: color-mix(in srgb, var(--cds-surfac
     document.body.querySelectorAll('*').forEach(check)
   }
   const unmarkAll = () =>
-    document.querySelectorAll('[data-aw-clear],[data-aw-frost],[data-aw-clearimg]').forEach(el => {
+    document.querySelectorAll('[data-aw-clear],[data-aw-frost],[data-aw-clearimg],[data-aw-noshadow]').forEach(el => {
       el.removeAttribute('data-aw-clear')
       el.removeAttribute('data-aw-frost')
       el.removeAttribute('data-aw-clearimg')
+      el.removeAttribute('data-aw-noshadow')
     })
 
   const pending = new Set<Element>()

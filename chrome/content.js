@@ -1307,6 +1307,7 @@
 html.aw-on, html.aw-on body { background: transparent !important; }
 html.aw-on [data-aw-clear] { background-color: transparent !important; }
 html.aw-on [data-aw-clearimg] { background-image: none !important; }
+html.aw-on [data-aw-noshadow] { box-shadow: none !important; }
 html.aw-on [data-aw-frost] { background-color: color-mix(in srgb, var(--cds-surface-1, #191919) 45%, transparent) !important; backdrop-filter: blur(14px) saturate(1.15); }
 html.aw-on aside.dframe-sidebar { background-color: color-mix(in srgb, var(--cds-surface-2, #1f1f1f) 72%, transparent) !important; backdrop-filter: blur(18px) saturate(1.2); }
 html.aw-on .bg-surface-3 { background-color: color-mix(in srgb, var(--cds-surface-3, #2a2a2a) 86%, transparent) !important; backdrop-filter: blur(12px); }
@@ -1334,26 +1335,28 @@ html.aw-on .bg-surface-3 { background-color: color-mix(in srgb, var(--cds-surfac
     };
     const near = (c) => Math.abs(c[0] - base[0]) + Math.abs(c[1] - base[1]) + Math.abs(c[2] - base[2]) <= 6;
     function check(el2) {
-      if (el2.id === "aw-layer" || el2.id === "aw-picker-host") return;
-      if (el2.hasAttribute("data-aw-clear") || el2.hasAttribute("data-aw-frost")) return;
-      if (el2.matches("aside.dframe-sidebar")) return;
+      if (el2.id === "aw-layer" || el2.id === "aw-picker-host" || el2.matches("aside.dframe-sidebar") || el2.closest(SKIP)) return;
       const cs = getComputedStyle(el2);
-      const bg = parseColor(cs.backgroundColor);
-      if (bg && bg[3] > 0.3 && near(bg) && !el2.closest(SKIP)) el2.setAttribute(bg[3] < 0.99 ? "data-aw-frost" : "data-aw-clear", "");
-      const bi = cs.backgroundImage;
-      if (bi && bi !== "none" && bi.includes("gradient") && bi.includes(`${Math.round(base[0])}, ${Math.round(base[1])}, ${Math.round(base[2])}`) && !el2.closest(SKIP)) {
-        el2.setAttribute("data-aw-clearimg", "");
+      const rgb = `${Math.round(base[0])}, ${Math.round(base[1])}, ${Math.round(base[2])}`;
+      if (!el2.hasAttribute("data-aw-clear") && !el2.hasAttribute("data-aw-frost")) {
+        const bg = parseColor(cs.backgroundColor);
+        if (bg && bg[3] > 0.3 && near(bg)) el2.setAttribute(bg[3] < 0.99 ? "data-aw-frost" : "data-aw-clear", "");
       }
+      const bi = cs.backgroundImage;
+      if (bi && bi !== "none" && bi.includes("gradient") && bi.includes(rgb)) el2.setAttribute("data-aw-clearimg", "");
+      const sh = cs.boxShadow;
+      if (sh && sh !== "none" && sh.includes(`rgb(${rgb})`)) el2.setAttribute("data-aw-noshadow", "");
     }
     const fullSweep = () => {
       if (!document.body) return;
       check(document.body);
       document.body.querySelectorAll("*").forEach(check);
     };
-    const unmarkAll = () => document.querySelectorAll("[data-aw-clear],[data-aw-frost],[data-aw-clearimg]").forEach((el2) => {
+    const unmarkAll = () => document.querySelectorAll("[data-aw-clear],[data-aw-frost],[data-aw-clearimg],[data-aw-noshadow]").forEach((el2) => {
       el2.removeAttribute("data-aw-clear");
       el2.removeAttribute("data-aw-frost");
       el2.removeAttribute("data-aw-clearimg");
+      el2.removeAttribute("data-aw-noshadow");
     });
     const pending = /* @__PURE__ */ new Set();
     let sweepTimer = 0;

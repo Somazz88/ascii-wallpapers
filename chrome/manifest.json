@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ASCII Wallpapers for claude.ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sixteen live ASCII wallpapers behind your claude.ai chats. Type /theme in the message box, or press Alt+T.",
   "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
   "action": {
