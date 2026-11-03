@@ -51,8 +51,8 @@ function thumbnail(id: Choice): string {
 const nameOf = (id: Choice) => CARDS.find(card => card.id === id)?.zh ?? id
 
 /** Reads `/theme <words>`: a wallpaper, an intensity, `off`, or nothing. */
-function parse(args: string): { choice?: Choice; look?: Intensity } | null {
-  const q = args.trim().toLowerCase().replace(/\s+/g, '')
+function parse(args: unknown): { choice?: Choice; look?: Intensity } | null {
+  const q = (typeof args === 'string' ? args : '').trim().toLowerCase().replace(/\s+/g, '')
   if (!q) return {}
   if (['off', 'none', 'clear', '关', '关闭', '0'].includes(q)) return { choice: 'off' }
   for (const look of LOOK_ORDER) {
@@ -68,28 +68,52 @@ function parse(args: string): { choice?: Choice; look?: Intensity } | null {
 
 /** Puts the wallpaper behind the chat (or takes it down); a reason when nothing draws it. */
 async function show($: EngineInterface, choice: Choice, look: Intensity): Promise<string | null> {
-  if (choice === 'off') {
-    await $.ui.backdrop(undefined)
+  try {
+    if (choice === 'off') {
+      await $.ui.backdrop(undefined)
 
-    return null
+      return null
+    }
+    const result = await $.ui.backdrop({ id: choice, glass: { blur: 16, opacity: LOOKS[look].opacity } })
+
+    return result.isDrawn ? null : result.reason
+  } catch (error) {
+    return `backdrop: ${errorText(error)}`
   }
-  const result = await $.ui.backdrop({ id: choice, glass: { blur: 16, opacity: LOOKS[look].opacity } })
-
-  return result.isDrawn ? null : result.reason
 }
 
-async function choose($: EngineInterface, choice: Choice) {
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+/** A toast that never fails the command. */
+function say($: EngineInterface, text: string) {
+  try {
+    void Promise.resolve($.ui.toast(text)).catch(() => {})
+  } catch {}
+}
+
+/** Saving is best effort: the wallpaper still changes when the store is unavailable. */
+async function keep($: EngineInterface, key: string, value: unknown) {
+  try {
+    await $.store.set(key, value)
+  } catch {}
+}
+
+async function choose($: EngineInterface, choice: Choice): Promise<string | null> {
   await update($, scene, () => choice)
-  await $.store.set('scene', choice)
+  await keep($, 'scene', choice)
   const why = await show($, choice, await read($, intensity))
-  if (choice === 'off') $.ui.toast('壁纸已关闭')
-  else if (why) $.ui.toast(`已选「${nameOf(choice)}」，但这里画不了壁纸：${why}（壁纸只在电脑版 app 显示）`)
-  else $.ui.toast(`壁纸：${nameOf(choice)}`)
+  if (choice === 'off') say($, '壁纸已关闭')
+  else if (why) say($, `已选「${nameOf(choice)}」，但没画出来：${why}`)
+  else say($, `壁纸：${nameOf(choice)}`)
+
+  return why
 }
 
 async function setLook($: EngineInterface, look: Intensity) {
   await update($, intensity, () => look)
-  await $.store.set('intensity', look)
+  await keep($, 'intensity', look)
   const current = await read($, scene)
   if (current !== 'off') await show($, current, look)
 }
@@ -102,19 +126,19 @@ const USAGE = [
 ].join('\n')
 
 /** One run of /theme or /wallpaper. */
-async function runWallpaper($: EngineInterface, args: string): Promise<{ text?: string }> {
+async function runWallpaper($: EngineInterface, args: unknown): Promise<{ text?: string }> {
   const asked = parse(args)
   if (asked === null) return { text: USAGE }
   if (asked.look) {
     await setLook($, asked.look)
-    $.ui.toast(`壁纸强度：${LOOKS[asked.look].zh}`)
+    say($, `壁纸强度：${LOOKS[asked.look].zh}`)
 
     return {}
   }
   if (asked.choice) {
-    await choose($, asked.choice)
+    const why = await choose($, asked.choice)
 
-    return {}
+    return why && asked.choice !== 'off' ? { text: `已选「${nameOf(asked.choice)}」，但没画出来：${why}` } : {}
   }
   await update($, isPickerOpen, () => true)
 
@@ -148,14 +172,14 @@ export const register: Register = on => {
     return done
   }).catch(($, e, next) => (next.called ? { clientId: '' } : next(e)))
 
-  on('command.run', { command: 'wallpaper' }, ($, e) => runWallpaper($, e.args)).catch(() => ({
-    text: '壁纸没换成，再试一次 /wallpaper',
+  on('command.run', { command: 'wallpaper' }, ($, e) => runWallpaper($, e.args)).catch(($, e, next) => ({
+    text: `壁纸没换成（${next.error?.kind ?? 'error'}: ${next.error?.message ?? '没有更多信息'}），截图发给作者看看`,
   }))
 
   // The built-in /theme keeps its colour picker under `/theme colors`;
   // everything else typed after /theme is about wallpapers.
   on('command.run', { command: 'theme' }, async ($, e, next) => {
-    const words = e.args.trim().toLowerCase()
+    const words = (typeof e.args === 'string' ? e.args : '').trim().toLowerCase()
     if (words === 'colors' || words === 'colours' || words === '颜色') return next({ ...e, args: '' })
 
     return runWallpaper($, e.args)

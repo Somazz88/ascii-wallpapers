@@ -91,3 +91,27 @@ test('/theme colors still reaches the built-in colour picker', async ($, on) => 
   const run = await $.command.run({ ...RUN, command: 'theme', args: 'colors' })
   expect(run?.text).toBe('built-in')
 })
+
+test('a run whose args are missing opens the picker instead of failing', async ($, on) => {
+  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('store.get', () => ({ value: undefined }))
+  on('store.set', () => {
+    throw new Error('store offline')
+  })
+  on('ui.toast', () => {
+    throw new Error('no toasts here')
+  })
+  on('ui.backdrop', () => {
+    throw new Error('no backdrop layer')
+  })
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('command.run', () => ({ text: 'built-in' }))
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const bare = await $.command.run({ ...RUN, command: 'wallpaper', args: undefined as unknown as string })
+  expect(bare?.text).toBeUndefined()
+
+  const sky = await $.command.run({ ...RUN, command: 'wallpaper', args: 'sky' })
+  // The reason reaches the person instead of a bare "try again".
+  expect(sky?.text).toContain('backdrop:')
+})
