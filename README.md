@@ -6,6 +6,11 @@ Live wallpapers painted in character tiles, drawn **behind the conversation** in
 
 Every scene is one self-contained animated SVG: tiles are pattern-filled runs, letters are `<text>`, motion is CSS keyframes. No script runs, so the wallpaper keeps moving without any work from the session.
 
+## Requirements
+
+- The Claude desktop app, **Code** tab (a local session). Other surfaces don't draw backdrops.
+- A recent Claude Code: the wallpaper uses the plugin backdrop API (`$.ui.backdrop`), which older builds don't have. Built and tested against Claude Code 2.1.317. On an older build `/wallpaper` says so instead of drawing; run `claude update` and restart the app.
+
 ## Install
 
 At the prompt of a Claude Code terminal session:

@@ -113,5 +113,21 @@ test('a run whose args are missing opens the picker instead of failing', async (
 
   const sky = await $.command.run({ ...RUN, command: 'wallpaper', args: 'sky' })
   // The reason reaches the person instead of a bare "try again".
-  expect(sky?.text).toContain('backdrop:')
+  expect(sky?.text).toContain('没画出来：')
+})
+
+test('an engine without the backdrop API gets a clear "update Claude Code" answer', async ($, on) => {
+  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('store.get', () => ({ value: undefined }))
+  on('store.set', () => ({ value: undefined }))
+  on('ui.toast', () => ({ value: undefined }))
+  on('session.version', () => ({ value: { version: '2.1.200' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('command.run', () => ({ text: 'built-in' }))
+  // Nothing here answers ui.backdrop: the call fails as on an engine without it.
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const sky = await $.command.run({ ...RUN, command: 'wallpaper', args: 'sky' })
+  expect(sky?.text).toContain('2.1.200')
+  expect(sky?.text).toContain('claude update')
 })

@@ -67,6 +67,16 @@ function parse(args: unknown): { choice?: Choice; look?: Intensity } | null {
 }
 
 /** Puts the wallpaper behind the chat (or takes it down); a reason when nothing draws it. */
+/** What to say when this Claude Code predates the backdrop API. */
+async function tooOld($: EngineInterface): Promise<string> {
+  let version = ''
+  try {
+    version = (await $.session.version()).version
+  } catch {}
+
+  return `这个 Claude Code${version ? `（${version}）` : ''}还没有背景壁纸功能。先更新 Claude Code 和 Claude app（PowerShell 里跑 claude update），重启后再试`
+}
+
 async function show($: EngineInterface, choice: Choice, look: Intensity): Promise<string | null> {
   try {
     if (choice === 'off') {
@@ -78,6 +88,10 @@ async function show($: EngineInterface, choice: Choice, look: Intensity): Promis
 
     return result.isDrawn ? null : result.reason
   } catch (error) {
+    // An engine without the backdrop API: "$.ui.backdrop is not a function",
+    // or nothing beneath answers the call.
+    if (/not a function|no implementation for ui\.backdrop/.test(errorText(error))) return tooOld($)
+
     return `backdrop: ${errorText(error)}`
   }
 }
