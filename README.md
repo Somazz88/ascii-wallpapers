@@ -6,6 +6,11 @@ Live wallpapers painted in character tiles, drawn **behind the conversation** in
 
 Every scene is one self-contained animated SVG: tiles are pattern-filled runs, letters are `<text>`, motion is CSS keyframes. No script runs, so the wallpaper keeps moving without any work from the session.
 
+## Two ways to use it
+
+- **Chrome extension** for claude.ai in Chrome: works today. See [Chrome extension](#chrome-extension).
+- **Claude Code plugin** for the Claude desktop app's Code tab: needs a desktop app that draws plugin backdrops. See below.
+
 ## Requirements
 
 - The Claude desktop app, **Code** tab (a local session). Other surfaces don't draw backdrops.
@@ -43,6 +48,28 @@ Open the Claude desktop app, go to the **Code** tab and start a local session, t
 In the desktop app, `/theme` opens the app's own Appearance settings, so use `/wallpaper` there. In a terminal session `/theme` works too, and `/theme colors` still opens the built-in colour picker.
 
 Your choice is remembered across sessions. Wallpapers draw in the desktop app's Code tab only: the terminal, the mobile app and claude.ai chats don't draw backdrops.
+
+## Chrome extension
+
+The same sixteen scenes, painted behind your chats on claude.ai in Chrome (or Edge).
+
+1. Download this repository (**Code → Download ZIP**) and unzip it.
+2. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked**, and pick the `chrome` folder.
+3. Open [claude.ai](https://claude.ai) and type `/theme` in the message box. Pick a card with the arrow keys and Enter, or click it.
+
+| In claude.ai | What it does |
+| --- | --- |
+| `/theme` or `/wallpaper` | Opens the picker (nothing is sent). Arrow keys move, Enter applies, Esc closes. |
+| `/theme sky` + Enter | Switches straight to a scene; the message is not sent. |
+| `/theme off` + Enter | Takes the wallpaper down. |
+| `/theme soft` · `normal` · `vivid` + Enter | How strongly the wallpaper is veiled behind the text. |
+| Alt+T, or the toolbar button | Opens or closes the picker. |
+
+Tip: Chrome menu ⋮ → **Cast, save and share → Install page as app** turns claude.ai into its own window with its own taskbar icon, wallpaper included.
+
+How it works: the content script puts an `<img>` of the scene's animated SVG behind the page and makes claude.ai's own page-coloured backgrounds transparent (panels become frosted glass). It reads nothing from your chats and sends nothing anywhere; it only needs `storage` to remember your choice. Because it styles claude.ai's page from outside, a claude.ai redesign can break it until it is updated.
+
+Rebuild after changing a scene: `./chrome/build.sh` (bundles `chrome/src/content.ts` with `hooks/scenes.ts`).
 
 ## Scenes
 
