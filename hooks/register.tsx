@@ -95,10 +95,10 @@ async function setLook($: EngineInterface, look: Intensity) {
 }
 
 const USAGE = [
-  '用法：/theme（或 /wallpaper）打开壁纸选择器，或直接 /theme <名字>',
+  '用法：/wallpaper 打开壁纸选择器，或直接 /wallpaper <名字>（终端里 /theme 也行）',
   `壁纸：${SCENES.map(s => `${s.id}（${s.zh}）`).join('、')}、off（关闭）`,
   '强度：soft（柔和）、normal（标准）、vivid（鲜艳）',
-  '原本的颜色主题设置：/theme colors',
+  '终端里原本的颜色主题设置：/theme colors',
 ].join('\n')
 
 /** One run of /theme or /wallpaper. */
@@ -125,7 +125,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'wallpaper',
-      description: 'ASCII 动态壁纸：打开选择器，或 /wallpaper koi 直接换（/theme 也行）',
+      description: 'ASCII 动态壁纸：打开选择器，或 /wallpaper sky 直接换',
       argumentHint: '[koi|moon|sakura|matsuri|neon|sigil|blade|... |off|soft|vivid]',
     })
     const saved = await $.store.get('scene')
@@ -138,6 +138,15 @@ export const register: Register = on => {
 
     return next(e)
   })
+
+  // The desktop app attaches after the session starts: set the wallpaper again for it.
+  on('session.attach', async ($, e, next) => {
+    const done = await next(e)
+    const choice = await read($, scene)
+    if (choice !== 'off') await show($, choice, await read($, intensity))
+
+    return done
+  }).catch(($, e, next) => (next.called ? { clientId: '' } : next(e)))
 
   on('command.run', { command: 'wallpaper' }, ($, e) => runWallpaper($, e.args)).catch(() => ({
     text: '壁纸没换成，再试一次 /wallpaper',
@@ -180,7 +189,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column" gap={1} paddingX={1}>
         <Box flexDirection="row" gap={1} alignItems="center">
-          <Text bold>/theme</Text>
+          <Text bold>/wallpaper</Text>
           <Text dimColor>ASCII 壁纸 · 点一张就换，面板开着时按卡片上的键也行</Text>
           <Box flexGrow={1} />
           <Button key="done" label="完成" variant="primary" onPress={() => update($, isPickerOpen, () => false)} />

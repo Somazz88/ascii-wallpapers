@@ -1,6 +1,6 @@
 # ASCII Wallpapers
 
-Live wallpapers painted in character tiles, drawn **behind the conversation** in the Claude desktop app. Type `/theme`, pick a scene, and your chat sits on top of drifting clouds, swimming koi or a summer festival at night.
+Live wallpapers painted in character tiles, drawn **behind the conversation** in the Claude desktop app's Code tab. Type `/wallpaper`, pick a scene, and your chat sits on top of drifting clouds, swimming koi or a summer festival at night.
 
 ![All sixteen wallpapers](assets/preview.gif)
 
@@ -26,15 +26,18 @@ In the desktop app, where `/plugin` does not run: click **+** next to the prompt
 
 ## Use
 
+Open the Claude desktop app, go to the **Code** tab and start a local session, then:
+
 | Command | What it does |
 | --- | --- |
-| `/theme` or `/wallpaper` | Opens the picker above the prompt. Click a card, or press the key on it while the picker is open. **完成** closes it. |
-| `/theme koi`, `/theme 樱花`, `/theme neon` | Switches straight to a scene (id, English or Chinese name, or a prefix). |
-| `/theme off` | Takes the wallpaper down. |
-| `/theme soft` · `normal` · `vivid` | How strongly the app's panels frost over the wallpaper. |
-| `/theme colors` | The built-in colour theme picker, as before. |
+| `/wallpaper` | Opens the picker above the prompt. Click a card, or press the key on it while the picker is open. **完成** closes it. |
+| `/wallpaper sky`, `/wallpaper 樱花`, `/wallpaper neon` | Switches straight to a scene (id, English or Chinese name, or a prefix). |
+| `/wallpaper off` | Takes the wallpaper down. |
+| `/wallpaper soft` · `normal` · `vivid` | How strongly the app's panels frost over the wallpaper. |
 
-Your choice is remembered across sessions. Wallpapers draw on the desktop app only; the terminal and mobile app ignore them.
+In the desktop app, `/theme` opens the app's own Appearance settings, so use `/wallpaper` there. In a terminal session `/theme` works too, and `/theme colors` still opens the built-in colour picker.
+
+Your choice is remembered across sessions. Wallpapers draw in the desktop app's Code tab only: the terminal, the mobile app and claude.ai chats don't draw backdrops.
 
 ## Scenes
 
@@ -64,7 +67,8 @@ The mod uses the hooks API of Claude Code plugins:
 
 - `$.ui.backdrop({ id, glass })` sets the session's backdrop; a `ui.render` hook on `Backdrop` answers with an `<Svg isInteractive>` of the scene, so its CSS animation runs in a sandboxed frame.
 - A `ui.render` hook on `AbovePrompt` draws the picker: a live thumbnail `Svg` and a `Button` per scene.
-- `/theme` is the built-in command, hooked: anything after it is about wallpapers, except `colors`, which is handed on to the original.
+- `/wallpaper` is the mod's own command. In a terminal session the built-in `/theme` is hooked too: anything after it is about wallpapers, except `colors`, which is handed on to the original.
+- A `session.attach` hook sets the backdrop again when the desktop app joins a session that started before it.
 
 Adding a scene means writing one function in [`hooks/scenes.ts`](hooks/scenes.ts) that draws into the `Art` builder (`tiles`, `sprite`, `glow`, `glyph`, `move`), then listing it in `SCENES`.
 
