@@ -1,0 +1,11 @@
+{
+  "name": "ascii-wallpapers",
+  "version": "0.2.0",
+  "description": "/theme: sixteen live ASCII wallpapers drawn behind the chat in the Claude desktop app",
+  "author": { "name": "Somazz88", "url": "https://github.com/Somazz88" },
+  "homepage": "https://github.com/Somazz88/ascii-wallpapers",
+  "repository": "https://github.com/Somazz88/ascii-wallpapers",
+  "license": "MIT",
+  "keywords": ["wallpaper", "theme", "ascii", "backdrop", "anime"],
+  "types": "./types/index.d.ts"
+}

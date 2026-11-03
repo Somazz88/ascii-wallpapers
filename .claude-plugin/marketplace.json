@@ -1,0 +1,6 @@
+{
+  "name": "ascii-wallpapers",
+  "owner": { "name": "Somazz88" },
+  "metadata": { "description": "Live ASCII wallpapers for the Claude desktop app" },
+  "plugins": [{ "name": "ascii-wallpapers", "source": "./" }]
+}
